@@ -26,11 +26,12 @@ static void usage(void) {
     printf("  -g, --no-git        Skip Git initialization\n");
     printf("  -r, --no-readme     Skip README generation\n");
     printf("  -l, --no-license    Skip LICENSE generation\n");
+    printf("  -n, --no-track      Skip registration in project registry\n");
     printf("  -v, --verbose       Enable verbose output\n");
 }
 
 static int handle_init(int argc, char *argv[], DInitConfig user_cfg) {
-    ProjectConfig cfg = {true, true, true, user_cfg.verbose, NULL, user_cfg};
+    ProjectConfig cfg = {true, true, true, user_cfg.verbose, true, NULL, user_cfg};
     char *target_dir = NULL;
     char *proj_arg = NULL;
 
@@ -39,18 +40,20 @@ static int handle_init(int argc, char *argv[], DInitConfig user_cfg) {
         {"no-git", no_argument, 0, 'g'},
         {"no-readme", no_argument, 0, 'r'},
         {"no-license", no_argument, 0, 'l'},
+        {"no-track", no_argument, 0, 'n'},
         {"verbose", no_argument, 0, 'v'},
         {0, 0, 0, 0}
     };
 
     int opt;
     optind = 1;
-    while ((opt = getopt_long(argc, argv, "d:grlv", long_opts, NULL)) != -1) {
+    while ((opt = getopt_long(argc, argv, "d:grlnv", long_opts, NULL)) != -1) {
         switch (opt) {
             case 'd': target_dir = optarg; break;
             case 'g': cfg.use_git = false; break;
             case 'r': cfg.use_readme = false; break;
             case 'l': cfg.use_license = false; break;
+            case 'n': cfg.track = false; break;
             case 'v': cfg.verbose = true; break;
         }
     }
@@ -105,7 +108,7 @@ static int handle_init(int argc, char *argv[], DInitConfig user_cfg) {
     char *custom_path = get_custom_template_path(lang);
     if (custom_path) {
         init_custom(cfg, custom_path);
-        register_project(final_path, cfg.project_name, lang);
+        if (cfg.track) register_project(final_path, cfg.project_name, lang);
         printf("\nSuccessfully initialized custom project: %s\n", cfg.project_name);
         free(custom_path);
         return 0;
@@ -114,7 +117,7 @@ static int handle_init(int argc, char *argv[], DInitConfig user_cfg) {
     for (int i = 0; i < num_language_presets; i++) {
         if (strcmp(lang, language_presets[i].name) == 0) {
             language_presets[i].init_func(cfg);
-            register_project(final_path, cfg.project_name, lang);
+            if (cfg.track) register_project(final_path, cfg.project_name, lang);
             printf("\nSuccessfully initialized %s project: %s\n", lang, cfg.project_name);
             return 0;
         }

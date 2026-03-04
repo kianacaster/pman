@@ -9,6 +9,7 @@ typedef struct {
     bool use_readme;
     bool use_license;
     bool verbose;
+    bool track;
     const char *project_name;
     DInitConfig user_config;
 } ProjectConfig;

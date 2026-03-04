@@ -41,7 +41,11 @@ void run_tui(DInitConfig user_cfg) {
     printf("Create LICENSE? (Y/n): ");
     fgets(buf, sizeof(buf), stdin);
     bool use_license = (buf[0] != 'n' && buf[0] != 'N');
-    ProjectConfig cfg = {use_git, use_readme, use_license, user_cfg.verbose, NULL, user_cfg};
+    printf("Track in registry? (Y/n): ");
+    fgets(buf, sizeof(buf), stdin);
+    bool track = (buf[0] != 'n' && buf[0] != 'N');
+
+    ProjectConfig cfg = {use_git, use_readme, use_license, user_cfg.verbose, track, NULL, user_cfg};
     char final_path[1024];
     if (strlen(name) > 0) {
         cfg.project_name = name;
@@ -60,14 +64,14 @@ void run_tui(DInitConfig user_cfg) {
     char *custom_path = get_custom_template_path(lang);
     if (custom_path) {
         init_custom(cfg, custom_path);
-        register_project(final_path, cfg.project_name, lang);
+        if (cfg.track) register_project(final_path, cfg.project_name, lang);
         free(custom_path);
         return;
     }
     for (int i = 0; i < num_language_presets; i++) {
         if (strcmp(lang, language_presets[i].name) == 0) {
             language_presets[i].init_func(cfg);
-            register_project(final_path, cfg.project_name, lang);
+            if (cfg.track) register_project(final_path, cfg.project_name, lang);
             return;
         }
     }

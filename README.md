@@ -1,13 +1,14 @@
 # pman
 
-## Abstract
-pman is a high-performance, zero-dependency project lifecycle manager authored in C. It serves as both a deterministic bootstrapping utility and a centralized project registry.
+## Overview
+Project lifecycle manager in C. Automates bootstrapping and tracks project state.
 
 ## Features
-- 12 standardized language presets.
-- Hierarchical template resolution (built-in and custom).
-- Centralized registry for project tracking.
-- Secure design with strict input validation.
+- 12 language presets.
+- Subcommands: `init`, `list`, `status`, `prune`.
+- Custom templates in `~/.config/pman/templates/`.
+- Input validation and path traversal protection.
+- Optional project tracking.
 
 ## Installation
 ```bash
@@ -22,5 +23,8 @@ sudo make install
 `pman status`
 `pman prune`
 
+### Options
+- `-n, --no-track`: Skip registration in the project registry.
+
 ## Configuration
-`~/.dinitrc` stores user metadata for automated file generation.
+`~/.dinitrc` stores author metadata.
