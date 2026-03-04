@@ -63,7 +63,6 @@ static int handle_init(int argc, char *argv[], DInitConfig user_cfg) {
     const char *lang = argv[optind++];
     if (optind < argc) proj_arg = argv[optind++];
 
-    /* SECURITY: Hard abort on unsafe path */
     if (target_dir && !is_safe_path(target_dir)) {
         fprintf(stderr, "Error: Unsafe path detected.\n");
         return 1;

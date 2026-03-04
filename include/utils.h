@@ -9,8 +9,6 @@ bool write_formatted(const char *path, const char *fmt, const char *arg);
 bool write_readme(const char *path, const char *fmt, const char *name, const char *author, const char *email);
 bool create_and_enter_dir(const char *name);
 char* get_custom_template_path(const char *lang);
-
-/* Security Utilities */
 bool is_safe_name(const char *name);
 bool is_safe_path(const char *path);
 

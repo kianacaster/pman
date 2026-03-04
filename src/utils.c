@@ -91,12 +91,8 @@ bool is_safe_name(const char *name) {
 
 bool is_safe_path(const char *path) {
     if (!path || strlen(path) == 0 || strlen(path) > 512) return false;
-    
-    /* SECURITY: Strictly disallow path traversal and metacharacters */
     if (strstr(path, "..")) return false;
-    
     const char *bad_chars = ";|&><`$\\!*()[]{}'\"";
     if (strpbrk(path, bad_chars)) return false;
-    
     return true;
 }
