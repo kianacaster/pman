@@ -48,12 +48,6 @@ echo "Created by $PMAN_AUTHOR" > README.md
 Invoke the template:
 `pman init <template_name> [name]`
 
-## Design Principles
-- **C99 Compliance:** Built with standard C for portability.
-- **Zero Dependencies:** No external libraries or runtimes required.
-- **Data-Driven:** Logic uses configuration arrays instead of hardcoded functions for stability.
-- **Minimal Footprint:** Fast, stateless binary that respects POSIX standards.
-
 ## Install
 ```bash
 make
