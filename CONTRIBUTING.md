@@ -3,19 +3,9 @@
 ## Standards
 - C99
 - No dependencies
-- Input validation via `is_safe_name` and `is_safe_path`
-- No comments
 
-## System Architecture
+Anyone is welcome to contribute; all help is appreciated. Feel free to create an issue or submit a PR for any feature/update you have an idea for.
 
-### Execution Flow
-1. `main.c` loads `PManConfig` from `~/.pmanrc`.
-2. `main.c` matches subcommands against the `COMMANDS` table.
-3. `handle_init` parses flags and resolves project name/path.
-4. `execute_init` in `main.c` calls `init_language` or `init_custom` in `languages.c`.
-5. `register_project` in `registry.c` appends the project to the registry.
-
-### Logic
 - Languages are defined in `language_presets[]` as data in `languages.c`. Adding a language requires a new struct in this array.
 - The tool uses the filesystem and a flat-file registry (`registry.txt`).
 - User-provided names and paths pass through a whitelist filter before execution.
@@ -70,8 +60,3 @@ Defines project bootstrapping.
 - `bool create_and_enter_dir(...)`: Directory manager.
 - `bool is_safe_name(...)`: Name whitelist.
 - `bool is_safe_path(...)`: Path whitelist.
-
-## Roadmap
-- Parallel status check (pthreads)
-- SQLite registry backend
-- Command aliases
