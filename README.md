@@ -49,6 +49,7 @@ Invoke the template:
 `pman init <template_name> [name]`
 
 ## Install
+Clone the repository and run:
 ```bash
 make
 make setup
