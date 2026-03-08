@@ -1,10 +1,10 @@
 # pman
 
-**Project lifecycle manager for C99.** Bootstraps projects and tracks repository health across the filesystem.
+**Project Manager** Bootstraps projects and tracks repository health across the filesystem.
 
 ## 🚀 Overview
 
-Fragmented project setups increase cognitive load and lead to inconsistent environments. `pman` provides a single interface to automate bootstrapping and maintain a centralized index of scattered projects.
+pman` provides a single interface to automate project directory initialisation and maintain a centralized index of scattered projects.
 
 ## ✨ Core Features
 
@@ -35,8 +35,6 @@ Maintains a system-wide registry to audit projects across different directories.
 
 Define custom bootstrapping logic by placing shell scripts in `~/.config/pman/templates/`. Scripts receive project metadata via environment variables.
 
-**Example: Running `pman init c99 myproject` in terminal, showing automated Git init, file creation, and success message.**
-
 ## 🛠️ Custom Templates
 
 1. `mkdir -p ~/.config/pman/templates/<template_name>`
@@ -50,7 +48,7 @@ Define custom bootstrapping logic by placing shell scripts in `~/.config/pman/te
 - `PMAN_EMAIL`: Author email from config.
 - `PMAN_LICENSE`: License type from config.
 
-**Example `init.sh`:**
+**Example `mytemplate.sh`:**
 
 ```bash
 #!/bin/bash
@@ -59,9 +57,7 @@ touch src/main.c
 echo "Created by $PMAN_AUTHOR" > README.md
 ```
 
-Invoke: `pman init <template_name> [name]`
-
-**Example: Custom template execution creating directories and files.**
+Invoke: `pman init mytemplate`
 
 ## 📦 Installation
 
@@ -93,8 +89,6 @@ Clone the repository first.
 - `-l, --no-license`: Disable LICENSE generation.
 - `-n, --no-track`: Disable registry tracking.
 - `-v, --verbose`: Print command execution details.
-
-**Example: `pman status` output showing project health across multiple repos.**
 
 ## ⚙️ Configuration
 
