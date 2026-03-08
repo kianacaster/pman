@@ -100,4 +100,4 @@ Edit `~/.pmanrc`:
 - `email`: Contact info.
 - `license`: Default (e.g., MIT).
 
-<div align="center">⁂</div>
+
