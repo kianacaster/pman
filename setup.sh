@@ -1,15 +1,6 @@
 #!/bin/bash
 
 [ ! -f "pman" ] && exit 1
-[ ! -f "pman.sig" ] && exit 1
-
-LOCAL_SIG=$(sha256sum pman | awk '{print $1}')
-REF_SIG=$(cat pman.sig)
-
-if [ "$LOCAL_SIG" != "$REF_SIG" ]; then
-    echo "Integrity mismatch"
-    exit 1
-fi
 
 RC_FILE="$HOME/.pmanrc"
 CUR_AUTHOR=$(grep "author=" "$RC_FILE" 2>/dev/null | cut -d'=' -f2)

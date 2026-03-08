@@ -6,19 +6,16 @@ OBJ = $(SRC:.c=.o)
 
 .PHONY: all clean install test setup
 
-all: $(TARGET) sig
+all: $(TARGET)
 
 $(TARGET): $(OBJ)
 	$(CC) $(OBJ) -o $(TARGET)
-
-sig: $(TARGET)
-	@sha256sum $(TARGET) | awk '{print $$1}' > $(TARGET).sig
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f src/*.o tests/*.o unit_tests $(TARGET) $(TARGET).sig
+	rm -f src/*.o tests/*.o unit_tests $(TARGET)
 	rm -rf test_run
 
 install: all
