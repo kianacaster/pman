@@ -1,6 +1,15 @@
-__pycache__/
-*.py[cod]
-*$py.class
-.venv/
-venv/
-ENV/
+# Binaries
+pman
+unit_tests
+
+# Objects
+*.o
+src/*.o
+
+# Signatures
+*.sig
+
+# Test artifacts
+test_run/
+test_run_int/
+test_home_unit/
