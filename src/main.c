@@ -18,6 +18,7 @@
 typedef struct {
     int argc;
     char **argv;
+    int cmd_idx;
     PManConfig config;
 } AppContext;
 
@@ -137,24 +138,72 @@ static int handle_init(AppContext *ctx) {
 }
 
 static int handle_list(AppContext *ctx) {
+    if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 || strcmp(ctx->argv[1], "--help") == 0)) {
+        printf("pman list - List all registered projects\n\n");
+        printf("Usage: pman list\n\n");
+        printf("Options:\n");
+        printf("  %-20s %s\n", "-h, --help", "Show this help");
+        printf("\nDescription:\n");
+        printf("  Prints all projects currently tracked in the pman registry,\n");
+        printf("  along with their paths and language.\n");
+        return 0;
+    }
+    
     (void)ctx;
     list_projects();
     return 0;
 }
 
 static int handle_status(AppContext *ctx) {
+    if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 || strcmp(ctx->argv[1], "--help") == 0)) {
+        printf("pman status - Show git status for all registered projects\n\n");
+        printf("Usage: pman status\n\n");
+        printf("Options:\n");
+        printf("  %-20s %s\n", "-h, --help", "Show this help");
+        printf("\nDescription:\n");
+        printf("  Iterates all projects in the registry and runs 'git status -s'\n");
+        printf("  on each one. Projects whose paths no longer exist are skipped.\n");
+        return 0;
+    }    
+    
     (void)ctx;
     check_all_status();
     return 0;
 }
 
 static int handle_prune(AppContext *ctx) {
+    if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 || strcmp(ctx->argv[1], "--help") == 0)) {
+        printf("pman prune - Remove stale project paths from the registry\n\n");
+        printf("Usage: pman prune\n\n");
+        printf("Options:\n");
+        printf("  %-20s %s\n", "-h, --help", "Show this help");
+        printf("\nDescription:\n");
+        printf("  Scans the registry for projects whose paths no longer exist\n");
+        printf("  on the filesystem and removes them. The registry is updated\n");
+        printf("  atomically — changes only apply if at least one path was pruned.\n");
+        printf("  Prints the number of entries removed.\n");
+        return 0;
+    }       
+    
     (void)ctx;
     prune_registry();
     return 0;
 }
 
 static int handle_uninstall(AppContext *ctx) {
+    if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 || strcmp(ctx->argv[1], "--help") == 0)) {
+        printf("pman uninstall - Uninstall pman and remove all data\n\n");
+        printf("Usage: pman uninstall\n\n");
+        printf("Options:\n");
+        printf("  %-20s %s\n", "-h, --help", "Show this help");
+        printf("\nDescription:\n");
+        printf("  Removes the pman binary, configuration file (~/.pmanrc)\n");
+        printf("  and all data in ~/.config/pman/. You will be prompted\n");
+        printf("  for confirmation before anything is deleted.\n");
+        return 0;
+    }
+    
+    
     (void)ctx;
     // We assume the script is in the source directory if running from source,
     // but the binary should probably know where it's installed.
@@ -264,6 +313,7 @@ int main(int argc, char *argv[]) {
         .config = user_cfg
     };
 
+    app.cmd_idx = cmd_idx;
     for (size_t i = 0; i < sizeof(COMMANDS)/sizeof(Command); i++) {
         if (strcmp(argv[cmd_idx], COMMANDS[i].name) == 0) {
             app.argc = argc - cmd_idx;
