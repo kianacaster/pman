@@ -99,5 +99,3 @@ Edit `~/.pmanrc`:
 - `author`: Name for LICENSE and README.
 - `email`: Contact info.
 - `license`: Default (e.g., MIT).
-
-
