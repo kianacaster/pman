@@ -156,18 +156,6 @@ static int handle_prune(AppContext *ctx) {
 
 static int handle_uninstall(AppContext *ctx) {
     (void)ctx;
-    // We assume the script is in the source directory if running from source,
-    // but the binary should probably know where it's installed.
-    // For simplicity, we'll try to run it from a common location or relative to the project.
-    
-    // Check if uninstall.sh exists in current directory or /usr/local/share/pman/ (if we had that)
-    // For now, let's just use system() to call the script if it exists in the current directory
-    // or we can just implement the logic here.
-    // Given the user wants a script, let's try to call it.
-    
-    // Better yet, let's just implement the prompt and logic directly in C for better integration
-    // but the user specifically asked for a script too.
-    
     char response[10];
     char *user = getenv("USER");
     printf("pman will now be uninstalled for user %s [y/N]: ", user ? user : "unknown");
