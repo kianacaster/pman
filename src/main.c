@@ -244,6 +244,27 @@ static int handle_uninstall(AppContext *ctx) {
     return 0;
 }
 
+static int handle_export(AppContext *ctx) {
+
+    //the input of this command is 'pman export [flag] <project_name> <dest_path>'
+    //where the flag tells how to export the project
+
+    fprintf(stderr, "we entered handle_export"); //debug, TOREMOVE
+
+    if(ctx->argc <= 1) {
+        printf(""); //add the help text to print
+        return 0;
+    }
+
+    const char *arg = ctx->argv[1];
+    if(strcmp(arg, "-z") == 0 || strcmp(arg, "--zipped") == 0) {
+        printf("zipping the file"); //add the handle of zipping and exporting the file
+    }
+
+    if(strcmp(arg, "-i") == 0 || strcmp(arg, "--info") == 0) {
+        printf("exporting the readme");
+    }
+}
 /* --- Dispatcher Configuration --- */
 
 static const Command COMMANDS[] = {
@@ -251,7 +272,8 @@ static const Command COMMANDS[] = {
     {"list",   "List all registered projects",       handle_list},
     {"status", "Check Git status of all projects",   handle_status},
     {"prune",  "Remove missing projects from registry", handle_prune},
-    {"uninstall", "Uninstall pman and remove all data", handle_uninstall}
+    {"uninstall", "Uninstall pman and remove all data", handle_uninstall},
+    {"export", "Export the file project for easy sharing", handle_export}
 };
 
 static void print_usage(void) {

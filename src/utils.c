@@ -20,6 +20,20 @@ int run_command(const char *cmd, bool verbose) {
     return system(silent_cmd);
 }
 
+int zip_file(const char *src_path, const char *dest_path) {
+
+    char cmd[512];
+    snprintf(cmd, sizeof(cmd), "zip -j %s %s", dest_path, src_path);
+
+    int ret = system(cmd);
+
+    if (ret == 0) {
+        return 0;
+    }
+    
+    return 1;
+}
+
 bool write_to_file(const char *path, const char *content) {
     FILE *f = fopen(path, "w");
     if (!f) return false;

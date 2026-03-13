@@ -57,6 +57,39 @@ void register_project(const char *path, const char *name, const char *lang) {
     free(reg_path);
 }
 
+int get_project_path(const char *name, char *dest) {
+
+    if (!name) return 1;
+
+    char *reg_path = get_registry_path();
+    if (!reg_path) return 1;
+
+    FILE *f = fopen(reg_path, "r");
+    if (!f) {
+        free(reg_path);
+        return 1;
+    }
+
+    char line[PATH_MAX + 256]; // line buffer
+    char *result = NULL;
+
+    while (fgets(line, sizeof(line), f)) {
+        // Each line format: absolute_path|name|lang|timestamp
+        char *line_path = strtok(line, "|");
+        char *line_name = strtok(NULL, "|");
+        // skip lang and timestamp
+        if (line_name && strcmp(line_name, name) == 0) {
+            // Found the project
+            result = strdup(line_path); // caller must free
+            break;
+        }
+    }
+
+    fclose(f);
+    free(reg_path);
+    strcpy(dest, result);
+}
+
 void list_projects(void) {
     char *reg_path = get_registry_path();
     if (!reg_path) return;
