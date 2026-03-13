@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 /* --- Types & Definitions --- */
 
@@ -244,38 +245,49 @@ static int handle_uninstall(AppContext *ctx) {
     return 0;
 }
 
-static int handle_export(AppContext *ctx) {
+static int handle_export(AppContext *ctx)
+{
 
-    //the input of this command is 'pman export [flag] <project_name> <dest_path>'
-    //where the flag tells how to export the project
+    // the input of this command is 'pman export [flag] <project_name> <dest_path>'
+    // where the flag tells how to export the project
 
-    if(ctx->argc <= 1) {
-        printf(""); //add the help text to print
+    if (ctx->argc <= 1 || (strcmp(ctx->argv[1], "-h") == 0 || strcmp(ctx->argv[1], "--help") == 0)) {
+        printf("pman export - Export a project\n\n");
+        printf("Usage: pman export [flag] <project_name> <dest_path>\n\n");
+        printf("Options:\n");
+        printf("  %-20s %s\n", "-h, --help", "Show this help");
+        printf("  %-20s %s\n", "-z, --zipped", "Export the project as a .zip archive");
+        printf("  %-20s %s\n", "-i, --info", "Print the project's README to stdout");
+        printf("\nDescription:\n");
+        printf("  Exports a project to the specified destination path.\n");
+        printf("  Use -z to get a compressed archive, or -i to read\n");
+        printf("  the project's README directly in the terminal.\n");
+
         return 0;
     }
 
     const char *arg = ctx->argv[1];
-    if(strcmp(arg, "-z") == 0 || strcmp(arg, "--zipped") == 0) {
-        
-        //reading the project name
-        char *project_name  = ctx->argv[2];
+    if (strcmp(arg, "-z") == 0 || strcmp(arg, "--zipped") == 0) {
+
+        // reading the project name
+        char *project_name = ctx->argv[2];
         char src_path[256];
-        if(get_project_path(project_name, src_path) == 1) {
-            fprintf(stderr, "invalid project name");
+        if (get_project_path(project_name, src_path) == 1) {
+            fprintf(stderr, "invalid project name\n");
             return 1;
         }
 
-        //reading the destination path:
+        // reading the destination path:
         char *dest_path = ctx->argv[3];
-        if(!is_safe_path(dest_path)) {
-            fprintf(stderr, "invalid destination path");
+        if (!is_safe_path(dest_path)) {
+            fprintf(stderr, "invalid destination path\n");
             return 1;
         }
 
         char zip_dest[PATH_MAX];
         snprintf(zip_dest, sizeof(zip_dest), "%s/%s.zip", dest_path, project_name);
 
-        if(zip_file(src_path, zip_dest) != 0) {
+        if (zip_file(src_path, zip_dest) != 0) {
             fprintf(stderr, "error during zipping the file\n");
             return 1;
         }
@@ -285,10 +297,41 @@ static int handle_export(AppContext *ctx) {
     }
 
     if(strcmp(arg, "-i") == 0 || strcmp(arg, "--info") == 0) {
-        //TODO
-        printf("exporting the readme");
+
+        // getting the project path
+        char *project_name = ctx->argv[2];
+        char src_dir[256];
+        
+        if (get_project_path(project_name, src_dir) == 1) {
+            fprintf(stderr, "invalid project name\n");
+            return 1;
+        }
+
+        char path[4096];
+        snprintf(path, sizeof(path), "%s/README.md", src_dir);
+        struct stat st;
+
+        if (stat(path, &st) != 0){
+            fprintf(stderr, "%s has no README\n", project_name);
+            return 1;
+        }
+
+        FILE *f = fopen(path, "r");
+
+        if (!f) {
+            fprintf(stderr, "error reading the file\n");
+        }
+
+        char buf[1024];
+        size_t n;
+        while ((n = fread(buf, 1, sizeof(buf), f)) > 0)
+            fwrite(buf, 1, n, stdout);
+        
+        fclose(f);
         return 0;
     }
+
+    return 1;
 }
 /* --- Dispatcher Configuration --- */
 

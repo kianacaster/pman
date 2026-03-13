@@ -88,6 +88,8 @@ int get_project_path(const char *name, char *dest) {
     fclose(f);
     free(reg_path);
     strcpy(dest, result);
+
+    return 0;
 }
 
 void list_projects(void) {
