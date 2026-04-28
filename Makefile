@@ -4,6 +4,9 @@ TARGET = pman
 SRC = src/main.c src/utils.c src/languages.c src/tui.c src/config.c src/registry.c
 OBJ = $(SRC:.c=.o)
 
+PREFIX ?= /usr/local
+BINDIR = $(DESTDIR)$(PREFIX)/bin
+
 .PHONY: all clean install test setup uninstall
 
 all: $(TARGET)
@@ -19,9 +22,11 @@ clean:
 	rm -rf test_run
 
 install: all
-	sudo cp $(TARGET) /usr/local/bin/
+	mkdir -p $(BINDIR)
+	cp $(TARGET) $(BINDIR)/
 
 uninstall:
+	rm -f $(BINDIR)/$(TARGET)
 	@chmod +x uninstall.sh
 	@./uninstall.sh
 
