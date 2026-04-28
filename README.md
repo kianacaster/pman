@@ -1,6 +1,6 @@
 # pman
 
-A CLI tool to easily initialise, and manage, your project directories. 
+A CLI tool to easily initialise and manage your project directories. 
 
 ## Overview
 
