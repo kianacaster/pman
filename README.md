@@ -60,12 +60,12 @@ sudo make install PREFIX=/usr/local
 
 ## Usage
 
-- Initialize in new directory: `pman init <lang> <name>`
-- Initialize current directory: `pman init <lang>`
-- Audit all projects: `pman status`
-- List projects: `pman list`
-- Clean registry: `pman prune`
-- Export project: `pman export [flag] <name> <dest>`
+- `pman init <lang> [name]`  Initialise a project (defaults to current directory)
+- `pman list`                Show all registered projects
+- `pman status`              Check git status for all projects
+- `pman prune`               Remove dead paths from the index
+- `pman export -z <name> <dest>`  Export project as a .zip
+- `pman export -i <name>`         Display project README
 
 ### Flags
 
