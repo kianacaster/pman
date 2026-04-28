@@ -4,6 +4,7 @@
 #include "registry.h"
 #include "utils.h"
 #include <libgen.h>
+#include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +20,7 @@ static void clear_stdin(void) {
     ;
 }
 
-void run_wizard(PManConfig user_cfg) {
+void run_tui(PManConfig user_cfg) {
   printf(BOLD_CYAN "--- pman: Project Setup Wizard ---\n" RESET);
   char lang[32], name[128], buf[8];
   printf("\nLanguage: ");
@@ -48,7 +49,8 @@ void run_wizard(PManConfig user_cfg) {
 
   ProjectConfig cfg = {use_git, use_readme, use_license, user_cfg.verbose,
                        track,   NULL,       user_cfg};
-  char final_path[1024];
+  char final_path[PATH_MAX];
+  bool needs_free = false;
   if (strlen(name) > 0) {
     cfg.project_name = name;
     if (!create_and_enter_dir(cfg.project_name))
@@ -61,26 +63,34 @@ void run_wizard(PManConfig user_cfg) {
     char *tmp = strdup(final_path);
     cfg.project_name = strdup(basename(tmp));
     free(tmp);
+    needs_free = true;
   }
+
   if (!is_safe_name(cfg.project_name)) {
     fprintf(stderr, "Error: Current directory name is unsafe.\n");
+    if (needs_free) free((char *)cfg.project_name);
     return;
   }
+
   char *custom_path = get_custom_template_path(lang);
   if (custom_path) {
     init_custom(cfg, custom_path);
     if (cfg.track)
       register_project(final_path, cfg.project_name, lang);
     free(custom_path);
+    if (needs_free) free((char *)cfg.project_name);
     return;
   }
+
   for (int i = 0; i < num_language_presets; i++) {
     if (strcmp(lang, language_presets[i].name) == 0) {
       init_language(cfg, &language_presets[i]);
       if (cfg.track)
         register_project(final_path, cfg.project_name, lang);
+      if (needs_free) free((char *)cfg.project_name);
       return;
     }
   }
   printf("Error: Unsupported language: %s\n", lang);
+  if (needs_free) free((char *)cfg.project_name);
 }

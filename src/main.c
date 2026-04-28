@@ -298,12 +298,11 @@ static int handle_export(AppContext *ctx) {
 
     // reading the project name
     char *project_name = ctx->argv[2];
-    char src_path[256];
-    if (get_project_path(project_name, src_path) == 1) {
-      fprintf(stderr, "invalid project name\n");
-      return 1;
+    char src_path[PATH_MAX];
+    if (get_project_path(project_name, src_path, sizeof(src_path)) == 1) {
+        fprintf(stderr, "invalid project name\n");
+        return 1;
     }
-
     // reading the destination path:
     char *dest_path = ctx->argv[3];
     if (!is_safe_path(dest_path)) {
@@ -324,17 +323,15 @@ static int handle_export(AppContext *ctx) {
   }
 
   if (strcmp(arg, "-i") == 0 || strcmp(arg, "--info") == 0) {
-
-    // getting the project path
     char *project_name = ctx->argv[2];
-    char src_dir[256];
+    char src_dir[PATH_MAX];
 
-    if (get_project_path(project_name, src_dir) == 1) {
+    if (get_project_path(project_name, src_dir, sizeof(src_dir)) == 1) {
       fprintf(stderr, "invalid project name\n");
       return 1;
     }
 
-    char path[4096];
+    char path[PATH_MAX + 32];
     snprintf(path, sizeof(path), "%s/README.md", src_dir);
     struct stat st;
 
@@ -394,13 +391,12 @@ int main(int argc, char *argv[]) {
   PManConfig user_cfg = load_config();
 
   if (argc < 2) {
-    run_wizard(user_cfg);
+    run_tui(user_cfg);
     return 0;
   }
 
-  int cmd_idx = 1; // the index of the expected index of the main command
+  int cmd_idx = 1;
 
-  // checks if at argv[1] there's a flag by checking if first char is '-'
   if (argv[1][0] == '-') {
     if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-V") == 0) {
       printf("pman %s\n", PMAN_VERSION);
@@ -408,8 +404,6 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
       print_usage();
       return 0;
-      // here i assume that verbose is a global flag even if it is available
-      // only for pman init
     } else if (strcmp(argv[1], "--verbose") == 0 ||
                strcmp(argv[1], "-v") == 0) {
       user_cfg.verbose = true;
@@ -422,7 +416,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (cmd_idx >= argc) {
-    run_wizard(user_cfg);
+    run_tui(user_cfg);
     return 0;
   }
 

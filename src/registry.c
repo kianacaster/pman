@@ -10,30 +10,12 @@
 #include "registry.h"
 #include "utils.h"
 
-static void mkdir_recursive(const char *path) {
-    char tmp[1024];
-    char *p = NULL;
-    size_t len;
-    snprintf(tmp, sizeof(tmp), "%s", path);
-    len = strlen(tmp);
-    if (len >= sizeof(tmp)) return;
-    if (tmp[len - 1] == '/') tmp[len - 1] = 0;
-    for (p = tmp + 1; *p; p++) {
-        if (*p == '/') {
-            *p = 0;
-            mkdir(tmp, 0755);
-            *p = '/';
-        }
-    }
-    mkdir(tmp, 0755);
-}
-
 static char* get_registry_path(void) {
     const char *home = getenv("HOME");
     if (!home) return NULL;
     char config_dir[1024];
     snprintf(config_dir, 1024, "%s/.config/pman", home);
-    mkdir_recursive(config_dir);
+    mkdir_p(config_dir);
     char *path = malloc(1024);
     if (!path) return NULL;
     snprintf(path, 1024, "%s/.config/pman/registry.txt", home);
@@ -57,9 +39,8 @@ void register_project(const char *path, const char *name, const char *lang) {
     free(reg_path);
 }
 
-int get_project_path(const char *name, char *dest) {
-
-    if (!name) return 1;
+int get_project_path(const char *name, char *dest, size_t dest_size) {
+    if (!name || !dest || dest_size == 0) return 1;
 
     char *reg_path = get_registry_path();
     if (!reg_path) return 1;
@@ -70,26 +51,23 @@ int get_project_path(const char *name, char *dest) {
         return 1;
     }
 
-    char line[PATH_MAX + 256]; // line buffer
-    char *result = NULL;
+    char line[PATH_MAX + 256];
+    int found = 1;
 
     while (fgets(line, sizeof(line), f)) {
-        // Each line format: absolute_path|name|lang|timestamp
         char *line_path = strtok(line, "|");
         char *line_name = strtok(NULL, "|");
-        // skip lang and timestamp
         if (line_name && strcmp(line_name, name) == 0) {
-            // Found the project
-            result = strdup(line_path); // caller must free
+            strncpy(dest, line_path, dest_size - 1);
+            dest[dest_size - 1] = '\0';
+            found = 0;
             break;
         }
     }
 
     fclose(f);
     free(reg_path);
-    strcpy(dest, result);
-
-    return 0;
+    return found;
 }
 
 void list_projects(void) {

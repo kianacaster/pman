@@ -54,7 +54,7 @@ bool write_readme(const char *path, const char *fmt, const char *name, const cha
     return true;
 }
 
-static void mkdir_p(const char *path) {
+void mkdir_p(const char *path) {
     char tmp[1024];
     char *p = NULL;
     size_t len;
