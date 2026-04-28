@@ -25,9 +25,18 @@ PManConfig load_config(void) {
         char *val = strtok(NULL, "\n");
 
         if (key && val) {
-            if (strcmp(key, "author") == 0) strncpy(cfg.author, val, sizeof(cfg.author) - 1);
-            else if (strcmp(key, "email") == 0) strncpy(cfg.email, val, sizeof(cfg.email) - 1);
-            else if (strcmp(key, "license") == 0) strncpy(cfg.license, val, sizeof(cfg.license) - 1);
+            if (strcmp(key, "author") == 0) {
+                strncpy(cfg.author, val, sizeof(cfg.author) - 1);
+                cfg.author[sizeof(cfg.author) - 1] = '\0';
+            }
+            else if (strcmp(key, "email") == 0) {
+                strncpy(cfg.email, val, sizeof(cfg.email) - 1);
+                cfg.email[sizeof(cfg.email) - 1] = '\0';
+            }
+            else if (strcmp(key, "license") == 0) {
+                strncpy(cfg.license, val, sizeof(cfg.license) - 1);
+                cfg.license[sizeof(cfg.license) - 1] = '\0';
+            }
             else if (strcmp(key, "verbose") == 0) cfg.verbose = (strcmp(val, "true") == 0 || strcmp(val, "1") == 0);
         }
     }

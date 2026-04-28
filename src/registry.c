@@ -151,7 +151,8 @@ void prune_registry(void) {
     int pruned = 0;
     while (fgets(line, sizeof(line), in)) {
         char line_copy[2048];
-        strncpy(line_copy, line, sizeof(line_copy)-1);
+        strncpy(line_copy, line, sizeof(line_copy) - 1);
+        line_copy[sizeof(line_copy) - 1] = '\0';
         char *p = strtok(line_copy, "|");
         if (p) {
             struct stat st;

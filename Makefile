@@ -1,5 +1,6 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c99 -Iinclude
+CFLAGS = -Wall -Wextra -std=c99 -Iinclude -O3 -flto -g
+LDFLAGS = -flto
 TARGET = pman
 SRC = src/main.c src/utils.c src/languages.c src/tui.c src/config.c src/registry.c
 OBJ = $(SRC:.c=.o)
@@ -7,12 +8,16 @@ OBJ = $(SRC:.c=.o)
 PREFIX ?= /usr/local
 BINDIR = $(DESTDIR)$(PREFIX)/bin
 
-.PHONY: all clean install test setup uninstall
+.PHONY: all clean install test setup uninstall release
 
 all: $(TARGET)
 
+release: CFLAGS += -march=native -fno-plt
+release: LDFLAGS += -s
+release: all
+
 $(TARGET): $(OBJ)
-	$(CC) $(OBJ) -o $(TARGET)
+	$(CC) $(OBJ) -o $(TARGET) $(LDFLAGS)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -39,3 +44,4 @@ test: all
 setup: all
 	@chmod +x setup.sh
 	@./setup.sh
+
