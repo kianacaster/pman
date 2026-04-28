@@ -1,18 +1,11 @@
 # pman
 
-**Project Manager** Bootstraps projects and tracks repository health across the filesystem.
+A CLI tool to easily initialise, and manage, your project directories. 
 
-## 🚀 Overview
+## Overview
 
-pman` provides a single interface to automate project directory initialisation and maintain a centralized index of scattered projects.
+Skip the boring boilerplate every time you start a new project. Generate `.gitignore` files, and entry points based on 12 built-in languages or create your own.
 
-## ✨ Core Features
-
-### Standardization
-
-Ensures every project starts with a consistent structure. Generates boilerplate code, `.gitignore` files, and entry points based on 12 built-in language presets or user-defined templates.
-
-### Automation
 
 Replaces repetitive setup tasks with one command.
 
@@ -22,7 +15,7 @@ Replaces repetitive setup tasks with one command.
 - Executes language-specific initialization (e.g., `go mod init`, `npm init`).
 
 
-### Centralization
+### A centralised directory 
 
 Maintains a system-wide registry to audit projects across different directories.
 
@@ -31,17 +24,13 @@ Maintains a system-wide registry to audit projects across different directories.
 - `pman prune`: Removes dead paths from the index.
 
 
-### Extensibility
+### Customisation
 
-Define custom bootstrapping logic by placing shell scripts in `~/.config/pman/templates/`. Scripts receive project metadata via environment variables.
-
-## 🛠️ Custom Templates
+Create your own templates by placing shell scripts in `~/.config/pman/templates/`. Scripts receive project metadata via environment variables.
 
 1. `mkdir -p ~/.config/pman/templates/<template_name>`
 2. `touch ~/.config/pman/templates/<template_name>/init.sh`
 3. `chmod +x ~/.config/pman/templates/<template_name>/init.sh`
-
-**Environment variables:**
 
 - `PMAN_PROJECT_NAME`: Target project name.
 - `PMAN_AUTHOR`: Author name from config.
@@ -59,7 +48,8 @@ echo "Created by $PMAN_AUTHOR" > README.md
 
 Invoke: `pman init mytemplate`
 
-## 📦 Installation
+## Installation
+Prereqs: Make and gcc
 
 ```bash
 git clone https://www.github.com/kianacaster/pman.git
@@ -69,9 +59,7 @@ make setup
 sudo make install
 ```
 
-
-
-## 🚀 Usage
+## Usage
 
 ```
 - Initialize in new directory: `pman init <lang> <name>`
@@ -92,7 +80,7 @@ sudo make install
 - `-n, --no-track`: Disable registry tracking.
 - `-v, --verbose`: Print command execution details.
 
-## ⚙️ Configuration
+## Configuration
 
 Edit `~/.pmanrc`:
 
