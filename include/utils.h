@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 int run_command(const char *cmd, bool verbose);
+int run_command_args(char *const argv[], bool verbose);
 int zip_file(const char *src_path, const char *dest_path);
 bool write_to_file(const char *path, const char *content);
 bool write_formatted(const char *path, const char *fmt, const char *arg);
