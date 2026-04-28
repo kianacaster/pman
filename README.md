@@ -54,22 +54,18 @@ Prereqs: Make and gcc
 ```bash
 git clone https://www.github.com/kianacaster/pman.git
 cd pman
-make
-make setup
-sudo make install
+make release
+sudo make install PREFIX=/usr/local
 ```
 
 ## Usage
 
-```
 - Initialize in new directory: `pman init <lang> <name>`
-```
-
 - Initialize current directory: `pman init <lang>`
 - Audit all projects: `pman status`
 - List projects: `pman list`
 - Clean registry: `pman prune`
-
+- Export project: `pman export [flag] <name> <dest>`
 
 ### Flags
 
@@ -79,6 +75,8 @@ sudo make install
 - `-l, --no-license`: Disable LICENSE generation.
 - `-n, --no-track`: Disable registry tracking.
 - `-v, --verbose`: Print command execution details.
+- `-z, --zipped`: Export project as a .zip archive.
+- `-i, --info`: Print the project's README to stdout.
 
 ## Configuration
 
