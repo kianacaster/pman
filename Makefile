@@ -15,7 +15,7 @@ $(TARGET): $(OBJ)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f src/*.o tests/*.o unit_tests $(TARGET) uninstall.sh
+	rm -f src/*.o tests/*.o unit_tests $(TARGET)
 	rm -rf test_run
 
 install: all
