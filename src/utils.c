@@ -1,31 +1,79 @@
+#define _POSIX_C_SOURCE 200809L
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <stdarg.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #include <string.h>
 #include <libgen.h>
 #include <ctype.h>
+#include <fcntl.h>
 #include "utils.h"
 
 int run_command(const char *cmd, bool verbose) {
     if (verbose) {
         printf("Running: %s\n", cmd);
-        return system(cmd);
     }
-    char silent_cmd[1024];
-    snprintf(silent_cmd, sizeof(silent_cmd), "%s > /dev/null 2>&1", cmd);
-    return system(silent_cmd);
+    
+    pid_t pid = fork();
+    if (pid == 0) {
+        if (!verbose) {
+            int devnull = open("/dev/null", O_WRONLY);
+            if (devnull != -1) {
+                dup2(devnull, STDOUT_FILENO);
+                dup2(devnull, STDERR_FILENO);
+                close(devnull);
+            }
+        }
+        execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
+        exit(1);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+        return WEXITSTATUS(status);
+    }
+    return -1;
+}
+
+int run_command_args(char *const argv[], bool verbose) {
+    if (verbose) {
+        printf("Running:");
+        for (int i = 0; argv[i]; i++) printf(" %s", argv[i]);
+        printf("\n");
+    }
+
+    pid_t pid = fork();
+    if (pid == 0) {
+        if (!verbose) {
+            int devnull = open("/dev/null", O_WRONLY);
+            if (devnull != -1) {
+                dup2(devnull, STDOUT_FILENO);
+                dup2(devnull, STDERR_FILENO);
+                close(devnull);
+            }
+        }
+        execvp(argv[0], argv);
+        exit(1);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+        return WEXITSTATUS(status);
+    }
+    return -1;
 }
 
 int zip_file(const char *src_path, const char *dest_path) {
-    char cmd[512];
-    snprintf(cmd, sizeof(cmd), "zip -r %s %s", dest_path, src_path);
-    int ret = system(cmd);
-    if (ret == 0) {
-        return 0;
+    pid_t pid = fork();
+    if (pid == 0) {
+        execlp("zip", "zip", "-r", dest_path, src_path, (char *)NULL);
+        exit(1);
+    } else if (pid > 0) {
+        int status;
+        waitpid(pid, &status, 0);
+        return WEXITSTATUS(status) == 0 ? 0 : 1;
     }
     return 1;
 }

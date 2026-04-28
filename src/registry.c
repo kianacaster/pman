@@ -100,6 +100,12 @@ void check_all_status(void) {
     FILE *f = fopen(reg_path, "r");
     if (!f) return;
     char line[2048];
+    char original_cwd[PATH_MAX];
+    if (!getcwd(original_cwd, sizeof(original_cwd))) {
+        fclose(f);
+        free(reg_path);
+        return;
+    }
     while (fgets(line, sizeof(line), f)) {
         char *line_copy = strdup(line);
         char *p = strtok(line_copy, "|");
@@ -108,9 +114,13 @@ void check_all_status(void) {
             struct stat st;
             if (stat(p, &st) == 0) {
                 printf("[%s]\n", n);
-                char cmd[PATH_MAX + 64];
-                snprintf(cmd, sizeof(cmd), "cd '%s' && git status -s", p);
-                system(cmd);
+                if (chdir(p) == 0) {
+                    char *args[] = {"git", "status", "-s", NULL};
+                    run_command_args(args, true);
+                    if (chdir(original_cwd) != 0) {
+                        // ignore
+                    }
+                }
             }
         }
         free(line_copy);
