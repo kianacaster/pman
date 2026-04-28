@@ -1,6 +1,8 @@
+#define _DEFAULT_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 #include "config.h"
 
 PManConfig load_config(void) {
@@ -13,7 +15,7 @@ PManConfig load_config(void) {
     const char *home = getenv("HOME");
     if (!home) return cfg;
 
-    char path[512];
+    char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s/.pmanrc", home);
 
     FILE *f = fopen(path, "r");

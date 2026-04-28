@@ -76,7 +76,7 @@ void list_projects(void) {
     FILE *f = fopen(reg_path, "r");
     if (!f) return;
     printf("%-20s | %-10s | %s\n", "NAME", "LANG", "PATH");
-    char line[2048];
+    char line[PATH_MAX + 256];
     while (fgets(line, sizeof(line), f)) {
         char *p = strtok(line, "|");
         char *n = strtok(NULL, "|");
@@ -99,7 +99,7 @@ void check_all_status(void) {
     if (!reg_path) return;
     FILE *f = fopen(reg_path, "r");
     if (!f) return;
-    char line[2048];
+    char line[PATH_MAX + 256];
     char original_cwd[PATH_MAX];
     if (!getcwd(original_cwd, sizeof(original_cwd))) {
         fclose(f);
@@ -132,7 +132,7 @@ void check_all_status(void) {
 void prune_registry(void) {
     char *reg_path = get_registry_path();
     if (!reg_path) return;
-    char tmp_path[1024];
+    char tmp_path[PATH_MAX];
     snprintf(tmp_path, sizeof(tmp_path), "%s.XXXXXX", reg_path);
     int fd = mkstemp(tmp_path);
     if (fd == -1) {
@@ -147,10 +147,10 @@ void prune_registry(void) {
         return;
     }
     FILE *out = fdopen(fd, "w");
-    char line[2048];
+    char line[PATH_MAX + 256];
     int pruned = 0;
     while (fgets(line, sizeof(line), in)) {
-        char line_copy[2048];
+        char line_copy[PATH_MAX + 256];
         strncpy(line_copy, line, sizeof(line_copy) - 1);
         line_copy[sizeof(line_copy) - 1] = '\0';
         char *p = strtok(line_copy, "|");

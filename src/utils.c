@@ -11,6 +11,7 @@
 #include <libgen.h>
 #include <ctype.h>
 #include <fcntl.h>
+#include <limits.h>
 #include "utils.h"
 
 int run_command(const char *cmd, bool verbose) {
@@ -103,7 +104,7 @@ bool write_readme(const char *path, const char *fmt, const char *name, const cha
 }
 
 void mkdir_p(const char *path) {
-    char tmp[1024];
+    char tmp[PATH_MAX];
     char *p = NULL;
     size_t len;
     snprintf(tmp, sizeof(tmp), "%s", path);
@@ -130,9 +131,9 @@ bool create_and_enter_dir(const char *name) {
 char* get_custom_template_path(const char *lang) {
     const char *home = getenv("HOME");
     if (!home) return NULL;
-    char *path = malloc(1024);
+    char *path = malloc(PATH_MAX);
     if (!path) return NULL;
-    snprintf(path, 1024, "%s/.config/pman/templates/%s/init.sh", home, lang);
+    snprintf(path, PATH_MAX, "%s/.config/pman/templates/%s/init.sh", home, lang);
     struct stat st;
     if (stat(path, &st) == 0 && (st.st_mode & S_IXUSR)) return path;
     free(path);
@@ -148,7 +149,7 @@ bool is_safe_name(const char *name) {
 }
 
 bool is_safe_path(const char *path) {
-    if (!path || strlen(path) == 0 || strlen(path) > 512) return false;
+    if (!path || strlen(path) == 0 || strlen(path) > PATH_MAX) return false;
     if (strstr(path, "..")) return false;
     const char *bad_chars = ";|&><`$\\!*()[]{}'\"";
     if (strpbrk(path, bad_chars)) return false;
