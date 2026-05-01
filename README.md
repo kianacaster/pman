@@ -56,7 +56,6 @@ Manage initialisation templates.
 * `-s, --show <name>`: Display local template script content.
 
 #### export 
-(Credit: @mbrunori)
 `pman export [flag] <project_name> [dest_path]`
 
 * `-z, --zipped`: Export project as a .zip archive.
