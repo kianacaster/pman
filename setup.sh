@@ -17,3 +17,10 @@ email=${NEW_EMAIL:-$CUR_EMAIL}
 license=${NEW_LICENSE:-$CUR_LICENSE}
 verbose=false
 EOF
+
+# Deploy local templates
+mkdir -p "$HOME/.config/pman/templates"
+if [ -d "templates" ]; then
+    cp -r templates/* "$HOME/.config/pman/templates/"
+    echo "Deployed local templates to $HOME/.config/pman/templates/"
+fi

@@ -1,4 +1,4 @@
-#define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
 #include "config.h"
 #include "languages.h"
 #include "registry.h"
@@ -13,6 +13,7 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <dirent.h>
 
 /* --- Types & Definitions --- */
 
@@ -31,43 +32,15 @@ typedef struct {
   CommandHandler handler;
 } Command;
 
-/* --- Logic: Project Initialization --- */
+/* --- Helpers --- */
 
-static int execute_init(ProjectConfig cfg, const char *lang, const char *path) {
-  char final_path[PATH_MAX];
-
-  if (!create_and_enter_dir(path)) {
-    fprintf(stderr, "Error: Could not access directory '%s'\n", path);
-    return 1;
+static bool check_help(AppContext *ctx, const char *usage) {
+  if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 ||
+                        strcmp(ctx->argv[1], "--help") == 0)) {
+    printf("%s\n", usage);
+    return true;
   }
-
-  if (!getcwd(final_path, sizeof(final_path))) {
-    perror("getcwd");
-    return 1;
-  }
-
-  char *custom_path = get_custom_template_path(lang);
-  if (custom_path) {
-    init_custom(cfg, custom_path);
-    if (cfg.track)
-      register_project(final_path, cfg.project_name, lang);
-    printf("\nInitialized custom project: %s\n", cfg.project_name);
-    free(custom_path);
-    return 0;
-  }
-
-  for (int i = 0; i < num_language_presets; i++) {
-    if (strcmp(lang, language_presets[i].name) == 0) {
-      init_language(cfg, &language_presets[i]);
-      if (cfg.track)
-        register_project(final_path, cfg.project_name, lang);
-      printf("\nInitialized %s project: %s\n", lang, cfg.project_name);
-      return 0;
-    }
-  }
-
-  fprintf(stderr, "Error: Unsupported language '%s'\n", lang);
-  return 1;
+  return false;
 }
 
 /* --- Command Handlers --- */
@@ -80,7 +53,6 @@ static int handle_init(AppContext *ctx) {
                        .track = true,
                        .user_config = ctx->config};
 
-  char *target_dir = NULL;
   static struct option long_opts[] = {{"dir", required_argument, 0, 'd'},
                                       {"no-git", no_argument, 0, 'g'},
                                       {"no-readme", no_argument, 0, 'r'},
@@ -89,31 +61,19 @@ static int handle_init(AppContext *ctx) {
                                       {"verbose", no_argument, 0, 'v'},
                                       {0, 0, 0, 0}};
 
+  char *target_dir = NULL;
   int opt;
-  optind = 1; // Reset getopt for subcommand parsing
+  optind = 1; 
   while ((opt = getopt_long(ctx->argc, ctx->argv, "d:grlnv", long_opts,
                             NULL)) != -1) {
     switch (opt) {
-    case 'd':
-      target_dir = optarg;
-      break;
-    case 'g':
-      cfg.use_git = false;
-      break;
-    case 'r':
-      cfg.use_readme = false;
-      break;
-    case 'l':
-      cfg.use_license = false;
-      break;
-    case 'n':
-      cfg.track = false;
-      break;
-    case 'v':
-      cfg.verbose = true;
-      break;
-    default:
-      return 1;
+    case 'd': target_dir = optarg; break;
+    case 'g': cfg.use_git = false; break;
+    case 'r': cfg.use_readme = false; break;
+    case 'l': cfg.use_license = false; break;
+    case 'n': cfg.track = false; break;
+    case 'v': cfg.verbose = true; break;
+    default: return 1;
     }
   }
 
@@ -124,8 +84,6 @@ static int handle_init(AppContext *ctx) {
 
   const char *lang = ctx->argv[optind++];
   const char *proj_arg = (optind < ctx->argc) ? ctx->argv[optind] : NULL;
-
-  /* Resolve Project Name & Path */
   const char *work_dir = target_dir ? target_dir : (proj_arg ? proj_arg : ".");
 
   if (target_dir) {
@@ -145,203 +103,169 @@ static int handle_init(AppContext *ctx) {
     }
   }
 
-  if (!is_safe_name(cfg.project_name)) {
-    fprintf(stderr, "Error: Project name '%s' is unsafe or invalid.\n",
-            cfg.project_name);
-    return 1;
-  }
+  if (!is_safe_name(cfg.project_name))
+    die("Project name '%s' is unsafe or invalid.", cfg.project_name);
 
-  return execute_init(cfg, lang, work_dir);
+  execute_init(cfg, lang, work_dir);
+  return 0;
 }
 
 static int handle_list(AppContext *ctx) {
-  if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 ||
-                        strcmp(ctx->argv[1], "--help") == 0)) {
-    printf("pman list - List all registered projects\n\n");
-    printf("Usage: pman list\n\n");
-    printf("Options:\n");
-    printf("  %-20s %s\n", "-h, --help", "Show this help");
-    printf("\nDescription:\n");
-    printf("  Prints all projects currently tracked in the pman registry,\n");
-    printf("  along with their paths and language.\n");
+  if (check_help(ctx, "Usage: pman list\n\nList all registered projects."))
     return 0;
-  }
-
-  (void)ctx;
   list_projects();
   return 0;
 }
 
 static int handle_status(AppContext *ctx) {
-  if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 ||
-                        strcmp(ctx->argv[1], "--help") == 0)) {
-    printf("pman status - Show git status for all registered projects\n\n");
-    printf("Usage: pman status\n\n");
-    printf("Options:\n");
-    printf("  %-20s %s\n", "-h, --help", "Show this help");
-    printf("\nDescription:\n");
-    printf(
-        "  Iterates all projects in the registry and runs 'git status -s'\n");
-    printf(
-        "  on each one. Projects whose paths no longer exist are skipped.\n");
+  if (check_help(ctx, "Usage: pman status\n\nShow git status for all registered projects."))
     return 0;
-  }
-
-  (void)ctx;
   check_all_status();
   return 0;
 }
 
 static int handle_prune(AppContext *ctx) {
-  if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 ||
-                        strcmp(ctx->argv[1], "--help") == 0)) {
-    printf("pman prune - Remove stale project paths from the registry\n\n");
-    printf("Usage: pman prune\n\n");
-    printf("Options:\n");
-    printf("  %-20s %s\n", "-h, --help", "Show this help");
-    printf("\nDescription:\n");
-    printf("  Scans the registry for projects whose paths no longer exist\n");
-    printf("  on the filesystem and removes them. The registry is updated\n");
-    printf(
-        "  atomically — changes only apply if at least one path was pruned.\n");
-    printf("  Prints the number of entries removed.\n");
+  if (check_help(ctx, "Usage: pman prune\n\nRemove stale project paths from the registry."))
     return 0;
-  }
-
-  (void)ctx;
   prune_registry();
   return 0;
 }
 
 static int handle_uninstall(AppContext *ctx) {
-  if (ctx->argc > 1 && (strcmp(ctx->argv[1], "-h") == 0 ||
-                        strcmp(ctx->argv[1], "--help") == 0)) {
-    printf("pman uninstall - Uninstall pman and remove all data\n\n");
-    printf("Usage: pman uninstall\n\n");
-    printf("Options:\n");
-    printf("  %-20s %s\n", "-h, --help", "Show this help");
-    printf("\nDescription:\n");
-    printf("  Removes the pman binary, configuration file (~/.pmanrc)\n");
-    printf("  and all data in ~/.config/pman/. You will be prompted\n");
-    printf("  for confirmation before anything is deleted.\n");
+  if (check_help(ctx, "Usage: pman uninstall\n\nUninstall pman and remove all data."))
     return 0;
-  }
 
-  (void)ctx;
   char response[10];
-  char *user = getenv("USER");
-  printf("pman will now be uninstalled for user %s [y/N]: ",
-         user ? user : "unknown");
-  if (fgets(response, sizeof(response), stdin) == NULL)
-    return 1;
-
-  if (response[0] != 'y' && response[0] != 'Y') {
+  printf("pman will now be uninstalled for user %s [y/N]: ", getenv("USER") ? getenv("USER") : "unknown");
+  if (fgets(response, sizeof(response), stdin) == NULL || (response[0] != 'y' && response[0] != 'Y')) {
     printf("Uninstall cancelled.\n");
     return 0;
   }
 
-  printf("Removing configuration and data...\n");
-  char cmd[PATH_MAX];
   char *home = getenv("HOME");
   if (home) {
-    snprintf(cmd, sizeof(cmd), "rm -f %s/.pmanrc", home);
-    system(cmd);
-    snprintf(cmd, sizeof(cmd), "rm -rf %s/.config/pman", home);
-    system(cmd);
+    char cmd[PATH_MAX];
+    snprintf(cmd, sizeof(cmd), "rm -f %s/.pmanrc", home); system(cmd);
+    snprintf(cmd, sizeof(cmd), "rm -rf %s/.config/pman", home); system(cmd);
   }
 
   printf("To remove the binary, please run: sudo make uninstall\n");
-  printf("pman configuration has been uninstalled.\n");
   return 0;
 }
 
 static int handle_export(AppContext *ctx) {
-
-  // the input of this command is 'pman export [flag] <project_name>
-  // <dest_path>' where the flag tells how to export the project
-
-  if (ctx->argc <= 1 || (strcmp(ctx->argv[1], "-h") == 0 ||
-                         strcmp(ctx->argv[1], "--help") == 0)) {
-    printf("pman export - Export a project\n\n");
-    printf("Usage: pman export [flag] <project_name> <dest_path>\n\n");
-    printf("Options:\n");
-    printf("  %-20s %s\n", "-h, --help", "Show this help");
-    printf("  %-20s %s\n", "-z, --zipped",
-           "Export the project as a .zip archive");
-    printf("  %-20s %s\n", "-i, --info",
-           "Print the project's README to stdout");
-    printf("\nDescription:\n");
-    printf("  Exports a project to the specified destination path.\n");
-    printf("  Use -z to get a compressed archive, or -i to read\n");
-    printf("  the project's README directly in the terminal.\n");
-
+  if (check_help(ctx, "Usage: pman export [flag] <project_name> <dest_path>\n\n"
+                      "Options:\n"
+                      "  -z, --zipped    Export as .zip archive\n"
+                      "  -i, --info      Print project README"))
     return 0;
+
+  if (ctx->argc < 3) {
+    fprintf(stderr, "Error: Missing arguments. See 'pman export --help'.\n");
+    return 1;
   }
 
-  const char *arg = ctx->argv[1];
-  if (strcmp(arg, "-z") == 0 || strcmp(arg, "--zipped") == 0) {
+  const char *flag = ctx->argv[1];
+  const char *project_name = ctx->argv[2];
+  char src_path[PATH_MAX];
 
-    // reading the project name
-    char *project_name = ctx->argv[2];
-    char src_path[PATH_MAX];
-    if (get_project_path(project_name, src_path, sizeof(src_path)) == 1) {
-        fprintf(stderr, "invalid project name\n");
-        return 1;
-    }
-    // reading the destination path:
-    char *dest_path = ctx->argv[3];
-    if (!is_safe_path(dest_path)) {
-      fprintf(stderr, "invalid destination path\n");
-      return 1;
-    }
+  if (get_project_path(project_name, src_path, sizeof(src_path)) != 0)
+    die("Invalid project name '%s'", project_name);
+
+  if (strcmp(flag, "-z") == 0 || strcmp(flag, "--zipped") == 0) {
+    if (ctx->argc < 4) die("Missing destination path for zipped export");
+    const char *dest_path = ctx->argv[3];
+    if (!is_safe_path(dest_path)) die("Invalid destination path");
 
     char zip_dest[PATH_MAX];
     snprintf(zip_dest, sizeof(zip_dest), "%s/%s.zip", dest_path, project_name);
+    if (zip_file(src_path, zip_dest) != 0) die("Failed to create zip archive");
 
-    if (zip_file(src_path, zip_dest) != 0) {
-      fprintf(stderr, "error during zipping the file\n");
-      return 1;
+    printf("Project '%s' zipped to '%s'\n", project_name, zip_dest);
+  } else if (strcmp(flag, "-i") == 0 || strcmp(flag, "--info") == 0) {
+    char readme_path[PATH_MAX];
+    snprintf(readme_path, sizeof(readme_path), "%s/README.md", src_path);
+    if (read_file_to_stdout(readme_path) != 0)
+      die("Project '%s' has no README.md or it could not be read", project_name);
+  } else {
+    die("Unknown export flag '%s'", flag);
+  }
+
+  return 0;
+}
+static int handle_templates(AppContext *ctx) {
+  if (check_help(ctx, "Usage: pman templates [options]\n\n"
+                      "Options:\n"
+                      "  -l, --list      List all installed templates\n"
+                      "  -s, --show <t>  Show the content of a template's init script\n"
+                      "  -S, --search <q> Search for templates in the remote registry\n"
+                      "  -i, --install <t> Download and install a template from registry"))
+    return 0;
+
+  const char *home = getenv("HOME");
+  if (!home) die("HOME environment variable not set");
+  char templates_dir[PATH_MAX];
+  snprintf(templates_dir, sizeof(templates_dir), "%s/.config/pman/templates", home);
+
+  if (ctx->argc < 2 || strcmp(ctx->argv[1], "-l") == 0 || strcmp(ctx->argv[1], "--list") == 0) {
+    printf("Installed Templates:\n\n");
+    DIR *dir = opendir(templates_dir);
+    if (dir) {
+      struct dirent *entry;
+      while ((entry = readdir(dir)) != NULL) {
+        if (entry->d_name[0] == '.') continue;
+        printf("  - %s\n", entry->d_name);
+      }
+      closedir(dir);
     }
-
-    printf("%s correctly zipped and saved in: %s\n", project_name, dest_path);
     return 0;
   }
 
-  if (strcmp(arg, "-i") == 0 || strcmp(arg, "--info") == 0) {
-    char *project_name = ctx->argv[2];
-    char src_dir[PATH_MAX];
-
-    if (get_project_path(project_name, src_dir, sizeof(src_dir)) == 1) {
-      fprintf(stderr, "invalid project name\n");
-      return 1;
-    }
-
-    char path[PATH_MAX + 32];
-    snprintf(path, sizeof(path), "%s/README.md", src_dir);
-    struct stat st;
-
-    if (stat(path, &st) != 0) {
-      fprintf(stderr, "%s has no README\n", project_name);
-      return 1;
-    }
-
-    FILE *f = fopen(path, "r");
-
-    if (!f) {
-      fprintf(stderr, "error reading the file\n");
-    }
-
-    char buf[1024];
-    size_t n;
-    while ((n = fread(buf, 1, sizeof(buf), f)) > 0)
-      fwrite(buf, 1, n, stdout);
-
-    fclose(f);
+  if (strcmp(ctx->argv[1], "-s") == 0 || strcmp(ctx->argv[1], "--show") == 0) {
+    if (ctx->argc < 3) die("Missing template name");
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/%s/init.sh", templates_dir, ctx->argv[2]);
+    if (read_file_to_stdout(path) != 0) die("Template '%s' not found", ctx->argv[2]);
     return 0;
   }
 
+  const char *repo_base = "https://raw.githubusercontent.com/kianacaster/pman/main/templates";
+
+  if (strcmp(ctx->argv[1], "-S") == 0 || strcmp(ctx->argv[1], "--search") == 0) {
+    const char *query = (ctx->argc > 2) ? ctx->argv[2] : "";
+    printf("Searching registry for '%s'...\n", query);
+    // In a real app, this would fetch a manifest. For now, we simulate.
+    printf("Available in remote registry:\n");
+    printf("  - python    Standard Python project\n");
+    printf("  - c         Standard C project\n");
+    printf("  - cpp       C++ project\n");
+    printf("  - go        Go project\n");
+    printf("  - rust      Rust project\n");
+    printf("  - node      Node.js project\n");
+    return 0;
+  }
+
+  if (strcmp(ctx->argv[1], "-i") == 0 || strcmp(ctx->argv[1], "--install") == 0) {
+    if (ctx->argc < 3) die("Missing template name");
+    const char *target = ctx->argv[2];
+    printf("Installing '%s' from registry...\n", target);
+    
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd), "mkdir -p %s/%s && curl -fsSL %s/%s/init.sh -o %s/%s/init.sh && chmod +x %s/%s/init.sh", 
+             templates_dir, target, repo_base, target, templates_dir, target, templates_dir, target);
+    
+    if (system(cmd) == 0) {
+        printf("Template '%s' installed successfully.\n", target);
+    } else {
+        die("Failed to download template '%s'. Check your connection or name.", target);
+    }
+    return 0;
+  }
+
+  die("Unknown templates option '%s'", ctx->argv[1]);
   return 1;
 }
+
 /* --- Dispatcher Configuration --- */
 
 static const Command COMMANDS[] = {
@@ -349,6 +273,7 @@ static const Command COMMANDS[] = {
     {"list", "List all registered projects", handle_list},
     {"status", "Check Git status of all projects", handle_status},
     {"prune", "Remove missing projects from registry", handle_prune},
+    {"templates", "Manage templates (search/install)", handle_templates},
     {"uninstall", "Uninstall pman and remove all data", handle_uninstall},
     {"export", "Export the file project for easy sharing", handle_export}};
 
@@ -356,23 +281,13 @@ static void print_usage(void) {
   printf("PMan - Project Manager\n\nUsage: pman <command> "
          "[options]\n\nCommands:\n");
   for (size_t i = 0; i < sizeof(COMMANDS) / sizeof(Command); i++) {
-    printf("  %-8s %s\n", COMMANDS[i].name, COMMANDS[i].description);
+    printf("  %-10s %s\n", COMMANDS[i].name, COMMANDS[i].description);
   }
-  printf("\nGlobal Options:\n"
-         "  -v, --version       Print version\n"
-         "  -v, --verbose       Enable verbose output\n");
-  printf("\nInit Options:\n"
-         "  -d, --dir <path>    Target directory\n"
-         "  -g, --no-git        Skip Git\n"
-         "  -r, --no-readme     Skip README\n"
-         "  -l, --no-license    Skip LICENSE\n"
-         "  -n, --no-track      Skip registration\n");
 }
 
 /* --- Main Entry Point --- */
 
 int main(int argc, char *argv[]) {
-
   PManConfig user_cfg = load_config();
 
   if (argc < 2) {

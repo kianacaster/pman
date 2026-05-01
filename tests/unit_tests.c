@@ -118,14 +118,14 @@ void test_registry_operations() {
 void test_utils_files() {
     printf("Testing utility file operations...\n");
     
-    assert(write_to_file(TEST_HOME "/test.txt", "hello world") == true);
+    assert(write_file(TEST_HOME "/test.txt", "hello world") == true);
     FILE *f = fopen(TEST_HOME "/test.txt", "r");
     char buf[16];
     fgets(buf, sizeof(buf), f);
     assert(strcmp(buf, "hello world") == 0);
     fclose(f);
 
-    assert(write_formatted(TEST_HOME "/fmt.txt", "Hello %s", "PMan") == true);
+    assert(write_file_fmt(TEST_HOME "/fmt.txt", "Hello %s", "PMan") == true);
     f = fopen(TEST_HOME "/fmt.txt", "r");
     fgets(buf, sizeof(buf), f);
     assert(strcmp(buf, "Hello PMan") == 0);

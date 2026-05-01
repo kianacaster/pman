@@ -29,9 +29,12 @@ clean:
 install: all
 	mkdir -p $(BINDIR)
 	cp $(TARGET) $(BINDIR)/
+	mkdir -p $(HOME)/.config/pman/templates
+	cp -r templates/* $(HOME)/.config/pman/templates/ 2>/dev/null || true
 
 uninstall:
 	rm -f $(BINDIR)/$(TARGET)
+	rm -rf $(HOME)/.config/pman/templates
 	@chmod +x uninstall.sh
 	@./uninstall.sh
 

@@ -14,6 +14,10 @@ license=MIT
 verbose=false
 EOF
 
+# Deploy templates to test HOME
+mkdir -p "$HOME/.config/pman/templates"
+cp -r "$(pwd)/templates/"* "$HOME/.config/pman/templates/"
+
 fail() { echo "FAIL: $1"; exit 1; }
 
 echo "--- PMan: Comprehensive Integration Test Suite ---"
@@ -29,7 +33,7 @@ for lang in "${LANGUAGES[@]}"; do
         echo "    (Skipping binary-dependent init for $lang)"
         continue
     fi
-    $PMAN init "$lang" "proj_$lang" >/dev/null 2>&1 || fail "init $lang"
+    $PMAN init "$lang" "proj_$lang" || fail "init $lang"
     [ -d "proj_$lang" ] || fail "dir not created for $lang"
 done
 

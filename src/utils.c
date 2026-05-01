@@ -14,21 +14,31 @@
 #include <limits.h>
 #include "utils.h"
 
-int run_command(const char *cmd, bool verbose) {
-    if (verbose) {
-        printf("Running: %s\n", cmd);
+static void redirect_to_devnull() {
+    int devnull = open("/dev/null", O_WRONLY);
+    if (devnull != -1) {
+        dup2(devnull, STDOUT_FILENO);
+        dup2(devnull, STDERR_FILENO);
+        close(devnull);
     }
+}
+
+void die(const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    fprintf(stderr, "Error: ");
+    vfprintf(stderr, fmt, args);
+    fprintf(stderr, "\n");
+    va_end(args);
+    exit(EXIT_FAILURE);
+}
+
+int run_command(const char *cmd, bool verbose) {
+    if (verbose) printf("Running: %s\n", cmd);
     
     pid_t pid = fork();
     if (pid == 0) {
-        if (!verbose) {
-            int devnull = open("/dev/null", O_WRONLY);
-            if (devnull != -1) {
-                dup2(devnull, STDOUT_FILENO);
-                dup2(devnull, STDERR_FILENO);
-                close(devnull);
-            }
-        }
+        if (!verbose) redirect_to_devnull();
         execl("/bin/sh", "sh", "-c", cmd, (char *)NULL);
         exit(1);
     } else if (pid > 0) {
@@ -48,14 +58,7 @@ int run_command_args(char *const argv[], bool verbose) {
 
     pid_t pid = fork();
     if (pid == 0) {
-        if (!verbose) {
-            int devnull = open("/dev/null", O_WRONLY);
-            if (devnull != -1) {
-                dup2(devnull, STDOUT_FILENO);
-                dup2(devnull, STDERR_FILENO);
-                close(devnull);
-            }
-        }
+        if (!verbose) redirect_to_devnull();
         execvp(argv[0], argv);
         exit(1);
     } else if (pid > 0) {
@@ -79,7 +82,7 @@ int zip_file(const char *src_path, const char *dest_path) {
     return 1;
 }
 
-bool write_to_file(const char *path, const char *content) {
+bool write_file(const char *path, const char *content) {
     FILE *f = fopen(path, "w");
     if (!f) return false;
     fputs(content, f);
@@ -87,20 +90,26 @@ bool write_to_file(const char *path, const char *content) {
     return true;
 }
 
-bool write_formatted(const char *path, const char *fmt, const char *arg) {
+bool write_file_fmt(const char *path, const char *fmt, ...) {
     FILE *f = fopen(path, "w");
     if (!f) return false;
-    fprintf(f, fmt, arg);
+    va_list args;
+    va_start(args, fmt);
+    vfprintf(f, fmt, args);
+    va_end(args);
     fclose(f);
     return true;
 }
 
-bool write_readme(const char *path, const char *fmt, const char *name, const char *author, const char *email) {
-    FILE *f = fopen(path, "w");
-    if (!f) return false;
-    fprintf(f, fmt, name, author, email);
+int read_file_to_stdout(const char *path) {
+    FILE *f = fopen(path, "r");
+    if (!f) return -1;
+    char buf[1024];
+    size_t n;
+    while ((n = fread(buf, 1, sizeof(buf), f)) > 0)
+        fwrite(buf, 1, n, stdout);
     fclose(f);
-    return true;
+    return 0;
 }
 
 void mkdir_p(const char *path) {
