@@ -1,6 +1,6 @@
 # pman
 
-A project initialization and registry management tool.
+Easily initialise your project directories
 
 ## Installation
 
@@ -25,11 +25,11 @@ make setup
 ### Commands
 
 #### init
-Initialize a project using a template.
+Initialise a project using a template.
 `pman init [options] <template> [name]`
 
 * `-d, --dir <path>`: Specify target directory.
-* `-g, --no-git`: Disable Git initialization.
+* `-g, --no-git`: Disable Git initialisation.
 * `-r, --no-readme`: Disable README generation.
 * `-l, --no-license`: Disable LICENSE generation.
 * `-n, --no-track`: Disable registry tracking.
@@ -47,7 +47,7 @@ Remove projects with non-existent paths from the registry.
 `pman prune`
 
 #### templates
-Manage initialization templates.
+Manage initialisation templates.
 `pman templates [option] [argument]`
 
 * `-l, --list`: List installed templates.
