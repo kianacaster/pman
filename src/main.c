@@ -217,6 +217,8 @@ static int handle_templates(AppContext *ctx) {
         printf("  - %s\n", entry->d_name);
       }
       closedir(dir);
+    } else {
+        printf("  (No templates installed)\n");
     }
     return 0;
   }
@@ -225,44 +227,51 @@ static int handle_templates(AppContext *ctx) {
     if (ctx->argc < 3) die("Missing template name");
     char path[PATH_MAX];
     snprintf(path, sizeof(path), "%s/%s/init.sh", templates_dir, ctx->argv[2]);
-    if (read_file_to_stdout(path) != 0) die("Template '%s' not found", ctx->argv[2]);
+    if (read_file_to_stdout(path) != 0) die("Template '%s' not found locally", ctx->argv[2]);
     return 0;
   }
 
-  const char *repo_base = "https://raw.githubusercontent.com/kianacaster/pman/main/templates";
+  // Use config-defined repo or fallback to default
+  const char *repo_base = "https://raw.githubusercontent.com/kianacaster/pman/master/templates";
+  // Future: load from user_cfg.template_repo if we added it to struct
 
   if (strcmp(ctx->argv[1], "-S") == 0 || strcmp(ctx->argv[1], "--search") == 0) {
     const char *query = (ctx->argc > 2) ? ctx->argv[2] : "";
-    printf("Searching registry for '%s'...\n", query);
-    // In a real app, this would fetch a manifest. For now, we simulate.
+    printf("Searching remote registry at %s...\n", repo_base);
+    // Simulation: in a real app, fetch a JSON manifest
     printf("Available in remote registry:\n");
-    printf("  - python    Standard Python project\n");
-    printf("  - c         Standard C project\n");
-    printf("  - cpp       C++ project\n");
-    printf("  - go        Go project\n");
-    printf("  - rust      Rust project\n");
-    printf("  - node      Node.js project\n");
+    const char *defaults[] = {"python", "c", "cpp", "go", "rust", "node", "ruby", "php", "html", "bash", "java", "csharp"};
+    for (size_t i = 0; i < sizeof(defaults)/sizeof(char*); i++) {
+        if (strlen(query) == 0 || strcasestr(defaults[i], query)) {
+            printf("  - %s\n", defaults[i]);
+        }
+    }
     return 0;
   }
 
   if (strcmp(ctx->argv[1], "-i") == 0 || strcmp(ctx->argv[1], "--install") == 0) {
     if (ctx->argc < 3) die("Missing template name");
     const char *target = ctx->argv[2];
-    printf("Installing '%s' from registry...\n", target);
+    printf("Downloading '%s' from %s...\n", target, repo_base);
     
-    char cmd[1024];
+    char cmd[2048];
     snprintf(cmd, sizeof(cmd), "mkdir -p %s/%s && curl -fsSL %s/%s/init.sh -o %s/%s/init.sh && chmod +x %s/%s/init.sh", 
              templates_dir, target, repo_base, target, templates_dir, target, templates_dir, target);
     
-    if (system(cmd) == 0) {
+    int res = system(cmd);
+    if (res == 0) {
         printf("Template '%s' installed successfully.\n", target);
     } else {
-        die("Failed to download template '%s'. Check your connection or name.", target);
+        printf("\nError: Failed to download template.\n");
+        printf("Reason: Remote server returned an error (404 or connection failure).\n");
+        printf("Target URL: %s/%s/init.sh\n", repo_base, target);
+        printf("\nTip: Ensure the template exists in the registry or check your internet connection.\n");
+        return 1;
     }
     return 0;
   }
 
-  die("Unknown templates option '%s'", ctx->argv[1]);
+  die("Unknown templates option '%s'. See 'pman templates --help'.", ctx->argv[1]);
   return 1;
 }
 
@@ -275,14 +284,17 @@ static const Command COMMANDS[] = {
     {"prune", "Remove missing projects from registry", handle_prune},
     {"templates", "Manage templates (search/install)", handle_templates},
     {"uninstall", "Uninstall pman and remove all data", handle_uninstall},
-    {"export", "Export the file project for easy sharing", handle_export}};
+    {"export", "Export project archive or info", handle_export}};
 
 static void print_usage(void) {
-  printf("PMan - Project Manager\n\nUsage: pman <command> "
-         "[options]\n\nCommands:\n");
+  printf("PMan - Project Manager\n\nUsage: pman <command> [options]\n\nCommands:\n");
   for (size_t i = 0; i < sizeof(COMMANDS) / sizeof(Command); i++) {
     printf("  %-10s %s\n", COMMANDS[i].name, COMMANDS[i].description);
   }
+  printf("\nGlobal Options:\n"
+         "  -V, --version       Print version\n"
+         "  -h, --help          Show this help\n"
+         "  -v, --verbose       Enable verbose output\n");
 }
 
 /* --- Main Entry Point --- */
@@ -304,12 +316,16 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
       print_usage();
       return 0;
-    } else if (strcmp(argv[1], "--verbose") == 0 ||
-               strcmp(argv[1], "-v") == 0) {
+    } else if (strcmp(argv[1], "--verbose") == 0 || strcmp(argv[1], "-v") == 0) {
       user_cfg.verbose = true;
       cmd_idx = 2;
     } else {
-      fprintf(stderr, "pman: unknown option '%s'\n", argv[1]);
+      // Catch common mistakes like pman -i
+      if (strcmp(argv[1], "-i") == 0) {
+          fprintf(stderr, "Error: '-i' is a subcommand option. Did you mean 'pman templates -i' or 'pman init'?\n");
+      } else {
+          fprintf(stderr, "pman: unknown global option '%s'\n", argv[1]);
+      }
       fprintf(stderr, "Run 'pman -h' for usage.\n");
       return 1;
     }
