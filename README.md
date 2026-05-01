@@ -1,87 +1,85 @@
 # pman
 
-A CLI tool to easily initialise and manage your project directories. 
-
-## Overview
-
-Skip the boring boilerplate every time you start a new project. Generate `.gitignore` files, and entry points based on 12 built-in languages or create your own.
-
-
-Replaces repetitive setup tasks with one command.
-
-- Initializes Git repositories with standard branch naming.
-- Creates virtual environments and dependency files.
-- Generates LICENSE and README files using author metadata.
-- Executes language-specific initialization (e.g., `go mod init`, `npm init`).
-
-
-### A centralised directory 
-
-Maintains a system-wide registry to audit projects across different directories.
-
-- `pman status`: Batch audits Git health for all registered projects.
-- `pman list`: Identifies active and missing project paths.
-- `pman prune`: Removes dead paths from the index.
-
-
-### Customisation
-
-Create your own templates by placing shell scripts in `~/.config/pman/templates/`. Scripts receive project metadata via environment variables.
-
-1. `mkdir -p ~/.config/pman/templates/<template_name>`
-2. `touch ~/.config/pman/templates/<template_name>/init.sh`
-3. `chmod +x ~/.config/pman/templates/<template_name>/init.sh`
-
-- `PMAN_PROJECT_NAME`: Target project name.
-- `PMAN_AUTHOR`: Author name from config.
-- `PMAN_EMAIL`: Author email from config.
-- `PMAN_LICENSE`: License type from config.
-
-**Example `mytemplate.sh`:**
-
-```bash
-#!/bin/bash
-mkdir src docs
-touch src/main.c
-echo "Created by $PMAN_AUTHOR" > README.md
-```
-
-Invoke: `pman init mytemplate`
+A project initialization and registry management tool.
 
 ## Installation
-Prereqs: Make and gcc
+
+Prerequisites: `gcc`, `make`, `curl`.
 
 ```bash
-git clone https://www.github.com/kianacaster/pman.git
-cd pman
 make release
-sudo make install PREFIX=/usr/local
+sudo make install
+make setup
 ```
 
 ## Usage
 
-- `pman init <lang> [name]`  Initialise a project (defaults to current directory)
-- `pman list`                Show all registered projects
-- `pman status`              Check git status for all projects
-- `pman prune`               Remove dead paths from the index
-- `pman export -z <name> <dest>`  Export project as a .zip
-- `pman export -i <name>`         Display project README
+`pman [GLOBAL_OPTIONS] <COMMAND> [COMMAND_OPTIONS] [ARGUMENTS]`
 
-### Flags
+### Global Options
 
-- `-d, --dir <path>`: Specify target directory.
-- `-g, --no-git`: Disable Git initialization.
-- `-r, --no-readme`: Disable README generation.
-- `-l, --no-license`: Disable LICENSE generation.
-- `-n, --no-track`: Disable registry tracking.
-- `-v, --verbose`: Print command execution details.
-- `-z, --zipped`: Export project as a .zip archive.
-- `-i, --info`: Print the project's README to stdout.
+* `-h, --help`: Display usage information.
+* `-V, --version`: Display version information.
+* `-v, --verbose`: Enable verbose output.
+
+### Commands
+
+#### init
+Initialize a project using a template.
+`pman init [options] <template> [name]`
+
+* `-d, --dir <path>`: Specify target directory.
+* `-g, --no-git`: Disable Git initialization.
+* `-r, --no-readme`: Disable README generation.
+* `-l, --no-license`: Disable LICENSE generation.
+* `-n, --no-track`: Disable registry tracking.
+
+#### list
+Display all registered projects and their status.
+`pman list`
+
+#### status
+Execute `git status -s` across all registered projects.
+`pman status`
+
+#### prune
+Remove projects with non-existent paths from the registry.
+`pman prune`
+
+#### templates
+Manage initialization templates.
+`pman templates [option] [argument]`
+
+* `-l, --list`: List installed templates.
+* `-i, --install <name>`: Download template from remote repository.
+* `-S, --search <query>`: Search remote repository for templates.
+* `-s, --show <name>`: Display local template script content.
+
+#### export
+`pman export [flag] <project_name> [dest_path]`
+
+* `-z, --zipped`: Export project as a .zip archive.
+* `-i, --info`: Display project README.
+
+#### uninstall
+Remove configuration, registry, and templates.
+`pman uninstall`
 
 ## Configuration
 
-Edit `~/.pmanrc`:
+Configuration is stored in `~/.pmanrc` using `key=value` format.
 
-- `author`: Name for LICENSE and README.
-- `email`: Contact info.
-- `license`: Default (e.g., MIT).
+* `author`: Project author name.
+* `email`: Project author email.
+* `license`: Default license type.
+* `verbose`: Boolean (true/false).
+
+## Template Specification
+
+Templates are shell scripts located at `~/.config/pman/templates/<name>/init.sh`. The following environment variables are exported to the script:
+
+* `PMAN_PROJECT_NAME`: Target project name.
+* `PMAN_AUTHOR`: Configured author name.
+* `PMAN_EMAIL`: Configured author email.
+* `PMAN_LICENSE`: Configured license type.
+* `PMAN_USE_README`: Boolean ("true"/"false").

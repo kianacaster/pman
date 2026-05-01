@@ -301,52 +301,43 @@ static void print_usage(void) {
 
 int main(int argc, char *argv[]) {
   PManConfig user_cfg = load_config();
+  int opt;
+  
+  static struct option long_opts[] = {
+    {"help", no_argument, 0, 'h'},
+    {"version", no_argument, 0, 'V'},
+    {"verbose", no_argument, 0, 'v'},
+    {0, 0, 0, 0}
+  };
 
-  if (argc < 2) {
-    run_tui(user_cfg);
-    return 0;
-  }
-
-  int cmd_idx = 1;
-
-  if (argv[1][0] == '-') {
-    if (strcmp(argv[1], "--version") == 0 || strcmp(argv[1], "-V") == 0) {
-      printf("pman %s\n", PMAN_VERSION);
-      return 0;
-    } else if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
-      print_usage();
-      return 0;
-    } else if (strcmp(argv[1], "--verbose") == 0 || strcmp(argv[1], "-v") == 0) {
-      user_cfg.verbose = true;
-      cmd_idx = 2;
-    } else {
-      // Catch common mistakes like pman -i
-      if (strcmp(argv[1], "-i") == 0) {
-          fprintf(stderr, "Error: '-i' is a subcommand option. Did you mean 'pman templates -i' or 'pman init'?\n");
-      } else {
-          fprintf(stderr, "pman: unknown global option '%s'\n", argv[1]);
-      }
-      fprintf(stderr, "Run 'pman -h' for usage.\n");
-      return 1;
+  // Parse global options
+  while ((opt = getopt_long(argc, argv, "+hVv", long_opts, NULL)) != -1) {
+    switch (opt) {
+      case 'h': print_usage(); return 0;
+      case 'V': printf("pman %s\n", PMAN_VERSION); return 0;
+      case 'v': user_cfg.verbose = true; break;
+      default: 
+        fprintf(stderr, "Run 'pman -h' for usage.\n");
+        return 1;
     }
   }
 
-  if (cmd_idx >= argc) {
+  if (optind >= argc) {
+    if (user_cfg.verbose) printf("Verbose mode enabled. Starting setup wizard...\n");
     run_tui(user_cfg);
     return 0;
   }
 
-  AppContext app = {.argc = argc, .argv = argv, .config = user_cfg};
+  const char *cmd_name = argv[optind];
+  AppContext app = {.argc = argc - optind, .argv = argv + optind, .config = user_cfg};
 
-  app.cmd_idx = cmd_idx;
   for (size_t i = 0; i < sizeof(COMMANDS) / sizeof(Command); i++) {
-    if (strcmp(argv[cmd_idx], COMMANDS[i].name) == 0) {
-      app.argc = argc - cmd_idx;
-      app.argv = argv + cmd_idx;
+    if (strcmp(cmd_name, COMMANDS[i].name) == 0) {
       return COMMANDS[i].handler(&app);
     }
   }
 
+  fprintf(stderr, "pman: unknown command '%s'\n", cmd_name);
   print_usage();
   return 1;
 }

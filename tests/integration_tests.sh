@@ -40,7 +40,7 @@ done
 # 2. Test init flags
 echo "  Testing init flags (-g, -r, -l, -n)..."
 cd "$TEST_DIR/basic" || fail "cd basic"
-$PMAN init c flag_test -g -r -l -n >/dev/null 2>&1 || fail "init flags"
+$PMAN init -g -r -l -n c flag_test >/dev/null 2>&1 || fail "init flags"
 [ -d "flag_test" ] || fail "flag_test dir missing"
 [ -d "flag_test/.git" ] && fail "git initialized but -g used"
 [ -f "flag_test/README.md" ] && fail "README created but -r used"
