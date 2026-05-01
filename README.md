@@ -55,8 +55,7 @@ Manage initialisation templates.
 * `-S, --search <query>`: Search remote repository for templates.
 * `-s, --show <name>`: Display local template script content.
 
-#### export
-(Thanks to @mbrunori)
+#### export (Thanks to @mbrunori)
 `pman export [flag] <project_name> [dest_path]`
 
 * `-z, --zipped`: Export project as a .zip archive.
